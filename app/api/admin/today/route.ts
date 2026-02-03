@@ -6,8 +6,10 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
-    // Get today's date range
-    const today = new Date();
+    // Get today's date range (IST)
+    const now = new Date();
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const today = new Date(istNow);
     today.setHours(0, 0, 0, 0);
     
     const tomorrow = new Date(today);

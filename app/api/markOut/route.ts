@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const today = new Date();
+    // Use IST timezone
+    const now = new Date();
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const today = new Date(istNow);
     today.setHours(0, 0, 0, 0);
     
     const tomorrow = new Date(today);
@@ -41,9 +44,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mark OUT with server time
-    const now = new Date();
-    const outTime = now.toLocaleTimeString('en-US', {
+    // Mark OUT with IST time
+    const outNow = new Date();
+    const istOutTime = new Date(outNow.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const outTime = istOutTime.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',

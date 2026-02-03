@@ -26,8 +26,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already marked IN today
-    const today = new Date();
+    // Check if user already marked IN today (IST)
+    const now = new Date();
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const today = new Date(istNow);
     today.setHours(0, 0, 0, 0);
     
     const tomorrow = new Date(today);
@@ -47,12 +49,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create new attendance record
+    // Create new attendance record with IST time
+    const now = new Date();
+    const istTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    
     const attendance = new Attendance({
       name: user.name,
       phone: user.phone,
-      date: new Date(),
-      inTime: new Date().toLocaleTimeString('en-IN', {
+      date: istTime,
+      inTime: istTime.toLocaleTimeString('en-IN', {
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
