@@ -3,6 +3,9 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Payment from '@/models/Payment';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   try {
     await connectDB();

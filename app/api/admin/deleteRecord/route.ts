@@ -18,8 +18,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use IST timezone
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const today = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);

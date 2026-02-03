@@ -3,6 +3,9 @@ import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Attendance from '@/models/Attendance';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   try {
     const { userId, phone } = await request.json();

@@ -47,7 +47,12 @@ export default function AdminUsers() {
     try {
       // Add cache buster to prevent stale data
       const response = await fetch(`/api/admin/users?t=${Date.now()}`, {
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       const data = await response.json();
 
