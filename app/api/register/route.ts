@@ -16,8 +16,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get today's date
-    const today = new Date();
+    // Get today's date (IST)
+    const now = new Date();
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const today = new Date(istNow);
     today.setHours(0, 0, 0, 0);
     
     const tomorrow = new Date(today);
@@ -70,9 +72,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create new IN record for today
-    const now = new Date();
-    const inTime = now.toLocaleTimeString('en-US', {
+    // Create new IN record for today (IST)
+    const registerNow = new Date();
+    const istRegisterTime = new Date(registerNow.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const inTime = istRegisterTime.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
@@ -82,7 +85,7 @@ export async function POST(request: NextRequest) {
     await Attendance.create({
       name: user.name,
       phone: user.phone,
-      date: new Date(),
+      date: istRegisterTime,
       inTime,
       outTime: null,
     });

@@ -24,7 +24,10 @@ const UserSchema = new Schema<IUser>({
   joiningDate: {
     type: Date,
     required: true,
-    default: Date.now,
+    default: () => {
+      const now = new Date();
+      return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    },
   },
   lastPaymentDate: {
     type: Date,
@@ -41,7 +44,10 @@ const UserSchema = new Schema<IUser>({
   },
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: () => {
+      const now = new Date();
+      return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    },
   },
 });
 
