@@ -5,56 +5,56 @@ import { usePathname, useRouter } from 'next/navigation';
 
 export default function WiFiGuard({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
+  const [locationDenied, setLocationDenied] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
   // Skip location check for admin routes
   const isAdminRoute = pathname?.startsWith('/admin');
 
-  useEffect(() => {
-    // Allow admin routes without location check
-    if (isAdminRoute) {
+  const checkWiFi = async () => {
+    // For development/testing: Allow bypass with localStorage
+    const bypass = localStorage.getItem('wifi_check_bypass');
+    if (bypass === 'true') {
       setIsConnected(true);
       return;
     }
-    // Check WiFi connection
-    const checkWiFi = async () => {
-      // For development/testing: Allow bypass with localStorage
-      const bypass = localStorage.getItem('wifi_check_bypass');
-      if (bypass === 'true') {
-        setIsConnected(true);
-        return;
-      }
 
-      // Check if online first
-      if (!navigator.onLine) {
-        setIsConnected(false);
-        return;
-      }
+    // Check if online first
+    if (!navigator.onLine) {
+      setIsConnected(false);
+      return;
+    }
 
-      try {
-        // Try to get user's location
-        if ('geolocation' in navigator) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              // Call our network check API with location
-              const response = await fetch(
-                `/api/network-check?lat=${position.coords.latitude}&lon=${position.coords.longitude}`,
-                {
-                  cache: 'no-store',
-                  headers: { 'Cache-Control': 'no-cache' }
-                }
-              );
-              
-              if (response.ok) {
-                const data = await response.json();
-                setIsConnected(data.connected);
-              } else {
-                setIsConnected(false);
+    try {
+      // Try to get user's location
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            // Call our network check API with location
+            const response = await fetch(
+              `/api/network-check?lat=${position.coords.latitude}&lon=${position.coords.longitude}`,
+              {
+                cache: 'no-store',
+                headers: { 'Cache-Control': 'no-cache' }
               }
-            },
-            async (error) => {
-              // Fallback to IP-based check if geolocation fails
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              setIsConnected(data.connected);
+              setLocationDenied(false);
+            } else {
+              setIsConnected(false);
+            }
+          },
+          async (error) => {
+            // If location is denied, block access and show message
+            if (error.code === 1) {
+              setLocationDenied(true);
+              setIsConnected(false);
+            } else {
+              // Position unavailable or timeout - try IP fallback
               const response = await fetch('/api/network-check', {
                 cache: 'no-store',
                 headers: { 'Cache-Control': 'no-cache' }
@@ -63,35 +63,44 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
               if (response.ok) {
                 const data = await response.json();
                 setIsConnected(data.connected);
+                setLocationDenied(false);
               } else {
                 setIsConnected(false);
               }
-            },
-            { 
-              enableHighAccuracy: true,  // Use GPS instead of WiFi/IP for better accuracy
-              timeout: 10000,            // Wait up to 10 seconds
-              maximumAge: 0              // Don't use cached location
             }
-          );
-        } else {
-          // No geolocation support, use IP check
-          const response = await fetch('/api/network-check', {
-            cache: 'no-store',
-            headers: { 'Cache-Control': 'no-cache' }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            setIsConnected(data.connected);
-          } else {
-            setIsConnected(false);
+          },
+          { 
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
           }
+        );
+      } else {
+        // No geolocation support, use IP check
+        const response = await fetch('/api/network-check', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setIsConnected(data.connected);
+        } else {
+          setIsConnected(false);
         }
-      } catch (error) {
-        console.error('Network check failed:', error);
-        setIsConnected(false);
       }
-    };
+    } catch (error) {
+      console.error('Network check failed:', error);
+      setIsConnected(false);
+    }
+  };
+
+  useEffect(() => {
+    // Allow admin routes without location check
+    if (isAdminRoute) {
+      setIsConnected(true);
+      return;
+    }
 
     checkWiFi();
 
@@ -163,11 +172,13 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
             <p className="text-sm text-amber-800">
               <strong>📍 Location Required:</strong>
               <br />
-              • Allow location access when prompted
+              • <strong>Must allow location access</strong> to enter
               <br />
               • Move near a window if indoors (better GPS signal)
               <br />
               • Works best on mobile phones
+              <br />
+              • Blocking location will prevent access
             </p>
           </div>
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -176,10 +187,13 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
             </p>
           </div>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              setIsConnected(null); // Show loading
+              checkWiFi(); // Request location again
+            }}
             className="w-full bg-library-blue text-white py-3 rounded-lg font-semibold hover:bg-library-blue-dark transition-colors"
           >
-            Retry Connection
+            {locationDenied ? 'Grant Location Access' : 'Retry Connection'}
           </button>
         </div>
       </div>
