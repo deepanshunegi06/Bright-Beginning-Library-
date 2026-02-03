@@ -74,14 +74,15 @@ export async function POST(request: NextRequest) {
 
     // Create new IN record for today (IST)
     const registerNow = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
     const istRegisterTime = new Date(registerNow.getTime() + istOffset);
-    const inTime = istRegisterTime.toLocaleTimeString('en-IN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true,
-    });
+    
+    // Format time in IST (HH:MM:SS AM/PM)
+    const hours = istRegisterTime.getUTCHours();
+    const minutes = istRegisterTime.getUTCMinutes();
+    const seconds = istRegisterTime.getUTCSeconds();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const inTime = `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
 
     await Attendance.create({
       name: user.name,

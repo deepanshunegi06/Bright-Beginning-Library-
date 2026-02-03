@@ -46,7 +46,6 @@ export async function POST(request: NextRequest) {
 
     // Mark OUT with IST time
     const outNow = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
     const istOutTime = new Date(outNow.getTime() + istOffset);
     
     // Format time in IST (HH:MM:SS AM/PM)
