@@ -39,6 +39,10 @@ export async function GET(request: NextRequest) {
       records: formattedRecords,
       count: formattedRecords.length,
       insideCount: formattedRecords.filter((r) => !r.outTime).length,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
+      }
     });
   } catch (error: any) {
     console.error('Admin today error:', error);

@@ -20,7 +20,10 @@ export async function GET() {
       createdAt: user.createdAt
     }));
 
-    return NextResponse.json({ users: usersData });
+    const response = NextResponse.json({ users: usersData });
+    // Prevent caching for admin data
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (error) {
     console.error('Users fetch error:', error);
     return NextResponse.json(
