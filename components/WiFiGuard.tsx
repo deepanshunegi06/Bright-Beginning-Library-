@@ -113,8 +113,8 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
 
     checkWiFi();
 
-    // Recheck every 10 seconds
-    const interval = setInterval(checkWiFi, 10000);
+    // Recheck every 30 seconds (reduced for better performance)
+    const interval = setInterval(checkWiFi, 30000);
 
     // Listen for network changes
     const handleOnline = () => checkWiFi();

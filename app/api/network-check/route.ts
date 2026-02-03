@@ -36,13 +36,17 @@ export async function GET(request: NextRequest) {
         parseFloat(userLon)
       );
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         connected: distance <= maxRadius,
         method: 'geolocation',
         distance: Math.round(distance),
         maxRadius: maxRadius,
         timestamp: Date.now()
       });
+      
+      // Cache for 20 seconds
+      response.headers.set('Cache-Control', 'public, max-age=20, s-maxage=20');
+      return response;
     }
   }
 
@@ -89,11 +93,15 @@ export async function GET(request: NextRequest) {
   
   const isLibraryNetwork = clientIp ? allowedPrefixes.some(prefix => clientIp.startsWith(prefix)) : false;
   
-  return NextResponse.json({
+  const response = NextResponse.json({
     connected: isLibraryNetwork,
     method: 'ip',
     ip: clientIp || 'unknown',
     requiredPrefix: libraryNetworkPrefix,
     timestamp: Date.now()
   });
+  
+  // Cache for 20 seconds
+  response.headers.set('Cache-Control', 'public, max-age=20, s-maxage=20');
+  return response;
 }

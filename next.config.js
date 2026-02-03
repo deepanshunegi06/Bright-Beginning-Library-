@@ -5,6 +5,10 @@ const nextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Performance optimizations
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
 }
 
 module.exports = nextConfig
