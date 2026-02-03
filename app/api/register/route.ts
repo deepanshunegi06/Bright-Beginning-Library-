@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
 
     // Get today's date (IST)
     const now = new Date();
-    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-    const today = new Date(istNow);
-    today.setHours(0, 0, 0, 0);
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffset);
+    const today = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
     
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -74,7 +74,8 @@ export async function POST(request: NextRequest) {
 
     // Create new IN record for today (IST)
     const registerNow = new Date();
-    const istRegisterTime = new Date(registerNow.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const istRegisterTime = new Date(registerNow.getTime() + istOffset);
     const inTime = istRegisterTime.toLocaleTimeString('en-IN', {
       hour: '2-digit',
       minute: '2-digit',

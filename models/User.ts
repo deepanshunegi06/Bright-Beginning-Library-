@@ -26,7 +26,8 @@ const UserSchema = new Schema<IUser>({
     required: true,
     default: () => {
       const now = new Date();
-      return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      return new Date(now.getTime() + istOffset);
     },
   },
   lastPaymentDate: {
@@ -46,7 +47,8 @@ const UserSchema = new Schema<IUser>({
     type: Date,
     default: () => {
       const now = new Date();
-      return new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+      const istOffset = 5.5 * 60 * 60 * 1000;
+      return new Date(now.getTime() + istOffset);
     },
   },
 });
