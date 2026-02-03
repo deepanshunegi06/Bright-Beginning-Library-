@@ -13,6 +13,8 @@ interface AttendanceRecord {
 export default function AttendanceHistory() {
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
   const router = useRouter();
 
   useEffect(() => {
@@ -46,6 +48,12 @@ export default function AttendanceHistory() {
 
     fetchHistory();
   }, [router]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(history.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedHistory = history.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -92,38 +100,100 @@ export default function AttendanceHistory() {
                 <p className="text-gray-400 text-sm mt-2">Your history will appear here</p>
               </div>
             ) : (
-              <div className="space-y-3 sm:space-y-4">
-                {history.map((record, index) => (
-                  <div
-                    key={index}
-                    className="group bg-gradient-to-r from-gray-50 to-blue-50 hover:from-blue-50 hover:to-indigo-50 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="flex-1">
-                        <p className="font-bold text-gray-800 text-base sm:text-lg mb-2">📅 {record.date}</p>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="text-green-600 font-semibold">IN:</span>
-                            <span className="text-gray-700">{record.inTime}</span>
-                          </div>
-                          <div className="hidden sm:block text-gray-300">|</div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-red-600 font-semibold">OUT:</span>
-                            <span className="text-gray-700">{record.outTime || 'Not marked'}</span>
+              <>
+                <div className="space-y-3 sm:space-y-4">
+                  {paginatedHistory.map((record, index) => (
+                    <div
+                      key={index}
+                      className="group bg-gradient-to-r from-gray-50 to-blue-50 hover:from-blue-50 hover:to-indigo-50 p-4 rounded-xl border-2 border-gray-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-800 text-base sm:text-lg mb-2">📅 {record.date}</p>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-600 font-semibold">IN:</span>
+                              <span className="text-gray-700">{record.inTime}</span>
+                            </div>
+                            <div className="hidden sm:block text-gray-300">|</div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-red-600 font-semibold">OUT:</span>
+                              <span className="text-gray-700">{record.outTime || 'Not marked'}</span>
+                            </div>
                           </div>
                         </div>
+                        <span className={`self-start sm:self-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm ${
+                          record.outTime
+                            ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white'
+                            : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                        }`}>
+                          {record.outTime ? '✅ Complete' : '⏳ Incomplete'}
+                        </span>
                       </div>
-                      <span className={`self-start sm:self-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold shadow-sm ${
-                        record.outTime
-                          ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white'
-                          : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                      }`}>
-                        {record.outTime ? '✅ Complete' : '⏳ Incomplete'}
-                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-200">
+                    <div className="text-sm text-gray-600">
+                      Showing {startIndex + 1} to {Math.min(endIndex, history.length)} of {history.length} records
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          currentPage === 1
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white border-2 border-library-blue text-library-blue hover:bg-library-blue hover:text-white'
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      <div className="flex gap-1">
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                currentPage === pageNum
+                                  ? 'bg-gradient-to-r from-library-blue to-indigo-600 text-white shadow-md'
+                                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-library-blue hover:text-library-blue'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                          currentPage === totalPages
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                            : 'bg-white border-2 border-library-blue text-library-blue hover:bg-library-blue hover:text-white'
+                        }`}
+                      >
+                        Next
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </div>
         </div>
