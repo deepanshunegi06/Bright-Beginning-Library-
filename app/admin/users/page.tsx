@@ -73,7 +73,7 @@ export default function AdminUsers() {
     setEditingUser(user);
     setEditName(user.name);
     setEditPhone(user.phone);
-    setEditPaymentMonths(user.lastPaymentMonths || 1);
+    setEditPaymentMonths((user.lastPaymentMonths === 3 ? 3 : 1) as 1 | 3);
     setEditPaymentDate(user.lastPaymentDate ? new Date(user.lastPaymentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
   };
 
