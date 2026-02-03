@@ -105,20 +105,21 @@ export default function Dashboard() {
 
   return (
     <WiFiGuard>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
-        <div className="max-w-2xl mx-auto py-8">
-          {/* Header */}
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">
-                  Welcome, {userData.name}!
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-3 sm:p-4 md:p-6">
+        <div className="max-w-4xl mx-auto py-4 sm:py-6 md:py-8">
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-8 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6">
+              <div className="flex-1">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-library-blue to-indigo-600 bg-clip-text text-transparent">
+                  Welcome Back!
                 </h1>
-                <p className="text-gray-600 mt-1">{userData.phone}</p>
+                <p className="text-lg sm:text-xl font-semibold text-gray-800 mt-2">{userData.name}</p>
+                <p className="text-sm text-gray-600 mt-1">{userData.phone}</p>
               </div>
-              <div className="bg-library-blue p-3 rounded-full">
+              <div className="bg-gradient-to-br from-library-blue to-indigo-600 p-4 rounded-2xl shadow-lg">
                 <svg
-                  className="w-8 h-8 text-white"
+                  className="w-8 h-8 sm:w-10 sm:h-10 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -164,27 +165,29 @@ export default function Dashboard() {
 
             {/* Already Completed Alert */}
             {userData.alreadyCompletedToday && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                <div className="flex items-start">
-                  <svg
-                    className="w-6 h-6 text-gray-600 mr-3 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-1">
-                      Attendance Complete
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+                <div className="flex items-start gap-3">
+                  <div className="bg-green-100 p-2 sm:p-3 rounded-xl flex-shrink-0">
+                    <svg
+                      className="w-5 h-5 sm:w-6 sm:h-6 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-green-800 mb-1 text-base sm:text-lg">
+                      ✅ All Done for Today!
                     </h3>
-                    <p className="text-sm text-gray-700">
-                      You have already completed your entry for today.
+                    <p className="text-sm sm:text-base text-green-700">
+                      You have already completed your entry for today. See you tomorrow!
                     </p>
                   </div>
                 </div>
@@ -193,33 +196,39 @@ export default function Dashboard() {
 
             {/* Status Card */}
             {!userData.alreadyCompletedToday && (
-              <div className="border border-gray-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    Today's Status
+              <div className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-800">
+                    📅 Today's Status
                   </h2>
                   <span
-                    className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    className={`px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-semibold inline-block shadow-sm ${
                       isInside
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-gray-100 text-gray-800'
+                        ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white'
+                        : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-800'
                     }`}
                   >
-                    {isInside ? '🟢 Currently Inside Library' : '⚪ You have exited today'}
+                    {isInside ? '✅ Inside Library' : '🏁 Completed'}
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                    <span className="text-gray-600">Check-in Time:</span>
-                    <span className="font-semibold text-gray-900">
+                  <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🕐</span>
+                      <span className="text-sm sm:text-base text-gray-700 font-medium">Check-in</span>
+                    </div>
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">
                       {userData.todayInTime || 'N/A'}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center py-2">
-                    <span className="text-gray-600">Check-out Time:</span>
-                    <span className="font-semibold text-gray-900">
-                      {userData.todayOutTime || 'Not marked yet'}
+                  <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🕐</span>
+                      <span className="text-sm sm:text-base text-gray-700 font-medium">Check-out</span>
+                    </div>
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">
+                      {userData.todayOutTime || 'Not marked'}
                     </span>
                   </div>
                 </div>
@@ -227,19 +236,25 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Actions */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Actions Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <button
               onClick={() => router.push('/dashboard/history')}
-              className="bg-blue-100 text-library-blue py-3 rounded-xl font-semibold hover:bg-blue-200 transition-colors"
+              className="group bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 sm:p-5 rounded-2xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              📊 My History
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl sm:text-3xl">📊</span>
+                <span className="text-base sm:text-lg">My History</span>
+              </div>
             </button>
             <button
               onClick={() => router.push('/dashboard/profile')}
-              className="bg-purple-100 text-purple-700 py-3 rounded-xl font-semibold hover:bg-purple-200 transition-colors"
+              className="group bg-gradient-to-br from-purple-500 to-pink-600 text-white p-4 sm:p-5 rounded-2xl font-semibold hover:from-purple-600 hover:to-pink-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
-              ✏️ Edit Profile
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl sm:text-3xl">✏️</span>
+                <span className="text-base sm:text-lg">Edit Profile</span>
+              </div>
             </button>
           </div>
 
@@ -247,22 +262,25 @@ export default function Dashboard() {
           {isInside && !userData.alreadyCompletedToday && (
             <button
               onClick={() => setShowMarkOutConfirm(true)}
-              className="w-full bg-red-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-red-600 transition-colors shadow-lg"
+              className="w-full bg-gradient-to-r from-red-500 to-rose-600 text-white py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg hover:from-red-600 hover:to-rose-700 transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 mt-4 sm:mt-6"
             >
-              Mark Out
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl">🚪</span>
+                <span>Mark Out Now</span>
+              </div>
             </button>
           )}
 
           {/* Logout */}
-          <div className="text-center mt-6">
+          <div className="text-center mt-6 sm:mt-8">
             <button
               onClick={() => {
                 sessionStorage.removeItem('user');
                 router.push('/');
               }}
-              className="text-red-600 hover:text-red-700 transition-colors font-medium"
+              className="text-red-600 hover:text-red-700 transition-colors font-semibold text-sm sm:text-base px-6 py-2 hover:bg-red-50 rounded-lg"
             >
-              🚪 Logout
+              🔓 Logout
             </button>
           </div>
         </div>
