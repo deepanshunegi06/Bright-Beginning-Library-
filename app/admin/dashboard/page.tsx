@@ -13,11 +13,22 @@ interface AttendanceRecord {
   outTime: string | null;
 }
 
+interface PaymentAlert {
+  _id: string;
+  name: string;
+  phone: string;
+  expiryDate?: string;
+  daysLeft?: number;
+}
+
 export default function AdminDashboard() {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expiredUsers, setExpiredUsers] = useState<PaymentAlert[]>([]);
+  const [expiringSoonUsers, setExpiringSoonUsers] = useState<PaymentAlert[]>([]);
+  const [showPaymentAlerts, setShowPaymentAlerts] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -28,6 +39,7 @@ export default function AdminDashboard() {
     }
 
     fetchTodayData();
+    fetchPaymentAlerts();
   }, [router]);
 
   const fetchTodayData = async () => {
@@ -46,8 +58,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchPaymentAlerts = async () => {
+    try {
+      const response = await fetch('/api/admin/payment-alerts');
+      const data = await response.json();
+
+      if (response.ok) {
+        setExpiredUsers(data.expired || []);
+        setExpiringSoonUsers(data.expiringSoon || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch payment alerts:', err);
+    }
+  };
+
   const handleRefresh = () => {
     setRefreshing(true);
+    fetchTodayData();
+    fetchPaymentAlerts();
     fetchTodayData();
   };
 
@@ -149,7 +177,7 @@ export default function AdminDashboard() {
       <WiFiGuard>
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-library-blue mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading dashboard...</p>
           </div>
         </div>
@@ -161,49 +189,56 @@ export default function AdminDashboard() {
     <WiFiGuard>
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 lg:px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-sm text-gray-600">Bright Beginning Library</p>
+                <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard - Today</h1>
+                <p className="text-sm text-gray-600">
+                  {new Date().toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => router.push('/admin/users')}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-all font-medium"
                 >
                   👥 Users
                 </button>
                 <button
                   onClick={() => router.push('/admin/reports')}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-all font-medium"
                 >
                   📊 Reports
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-all font-medium"
                 >
-                  Logout
+                  🔓 Logout
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Currently Inside</p>
-                  <p className="text-3xl font-bold text-library-blue">{insideCount}</p>
+                  <p className="text-3xl font-bold text-gray-800">{insideCount}</p>
                 </div>
-                <div className="bg-blue-50 p-4 rounded-full">
+                <div className="bg-blue-100 p-3 rounded-lg">
                   <svg
-                    className="w-8 h-8 text-library-blue"
+                    className="w-7 h-7 text-blue-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -219,15 +254,15 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Total Today</p>
-                  <p className="text-3xl font-bold text-gray-900">{totalCount}</p>
+                  <p className="text-3xl font-bold text-gray-800">{totalCount}</p>
                 </div>
-                <div className="bg-green-50 p-4 rounded-full">
+                <div className="bg-green-100 p-3 rounded-lg">
                   <svg
-                    className="w-8 h-8 text-green-600"
+                    className="w-7 h-7 text-green-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -243,11 +278,23 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">Crowd Status</p>
-                  <p className={`text-2xl font-bold ${crowdStatus.color}`}>
+                  <p className="text-sm text-gray-600 mb-1">Completed</p>
+                  <p className="text-3xl font-bold text-gray-800">{totalCount - insideCount}</p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <span className="text-2xl">✅</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-md p-5 border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Status</p>
+                  <p className="text-xl font-bold text-gray-800">
                     {crowdStatus.emoji} {crowdStatus.text}
                   </p>
                 </div>
@@ -255,22 +302,61 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Payment Alerts */}
+          {(expiredUsers.length > 0 || expiringSoonUsers.length > 0) && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start">
+                  <svg
+                    className="w-5 h-5 text-yellow-600 mt-0.5 mr-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-semibold text-yellow-800">
+                      Payment Alerts
+                    </h3>
+                    <p className="text-sm text-yellow-700 mt-1">
+                      {expiredUsers.length > 0 && `${expiredUsers.length} expired`}
+                      {expiredUsers.length > 0 && expiringSoonUsers.length > 0 && ', '}
+                      {expiringSoonUsers.length > 0 && `${expiringSoonUsers.length} expiring soon`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => router.push('/admin/users')}
+                  className="text-sm text-yellow-800 hover:text-yellow-900 font-semibold underline"
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Actions Bar */}
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6 border border-gray-200">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search by name or phone..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-library-blue focus:border-transparent outline-none text-gray-900"
+                  className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 text-sm"
                 />
               </div>
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="px-6 py-2 bg-library-blue text-white rounded-lg hover:bg-library-blue-dark transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center font-medium text-sm"
               >
                 <svg
                   className={`w-5 h-5 mr-2 ${refreshing ? 'animate-spin' : ''}`}
@@ -289,7 +375,7 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={handleExportCSV}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center"
+                className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all flex items-center justify-center font-medium text-sm"
               >
                 <svg
                   className="w-5 h-5 mr-2"
@@ -304,33 +390,33 @@ export default function AdminDashboard() {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Export CSV
+                Export
               </button>
             </div>
           </div>
 
           {/* Attendance Table */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Phone
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       In Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Out Time
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -338,48 +424,48 @@ export default function AdminDashboard() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredData.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                        No records found
+                      <td colSpan={6} className="px-4 py-8 text-center text-gray-500 font-medium">
+                        {searchTerm ? 'No matching records found' : 'No attendance records for today yet'}
                       </td>
                     </tr>
                   ) : (
                     filteredData.map((record) => (
-                      <tr key={record._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      <tr key={record._id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {record.name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                           {record.phone}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                           {record.inTime}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                           {record.outTime || 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               record.outTime
-                                ? 'bg-gray-100 text-gray-800'
+                                ? 'bg-gray-100 text-gray-700'
                                 : 'bg-green-100 text-green-800'
                             }`}
                           >
                             {record.outTime ? 'Left' : 'Inside'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <td className="px-4 py-4 whitespace-nowrap text-xs space-x-2">
                           {!record.outTime && (
                             <button
                               onClick={() => handleForceOut(record.phone)}
-                              className="text-orange-600 hover:text-orange-800 font-medium"
+                              className="text-orange-600 hover:text-orange-800 font-semibold"
                             >
                               Force Out
                             </button>
                           )}
                           <button
                             onClick={() => handleDeleteRecord(record.phone)}
-                            className="text-red-600 hover:text-red-800 font-medium"
+                            className="text-red-600 hover:text-red-800 font-semibold"
                           >
                             Delete
                           </button>

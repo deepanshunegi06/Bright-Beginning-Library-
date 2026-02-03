@@ -53,6 +53,8 @@ export async function POST(request: NextRequest) {
         name: user.name,
         phone: user.phone,
         forgotYesterday,
+        subscriptionExpiryDate: user.subscriptionExpiryDate,
+        joiningDate: user.joiningDate,
       });
     }
 
@@ -65,6 +67,8 @@ export async function POST(request: NextRequest) {
         todayOutTime: todayRecord.outTime,
         forgotYesterday,
         alreadyCompletedToday: true,
+        subscriptionExpiryDate: user.subscriptionExpiryDate,
+        joiningDate: user.joiningDate,
       });
     }
 
@@ -74,6 +78,8 @@ export async function POST(request: NextRequest) {
       todayInTime: todayRecord.inTime,
       todayOutTime: todayRecord.outTime,
       forgotYesterday,
+      subscriptionExpiryDate: user.subscriptionExpiryDate,
+      joiningDate: user.joiningDate,
     });
   } catch (error: any) {
     console.error('User status error:', error);

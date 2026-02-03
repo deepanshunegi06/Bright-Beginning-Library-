@@ -1,29 +1,26 @@
 import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
-import Attendance from '@/models/Attendance';
 
 export async function GET() {
   try {
     await connectDB();
 
-    const users = await User.find({}).sort({ createdAt: -1 });
+    const users = await User.find({}).sort({ joiningDate: -1 });
 
-    const usersWithStats = await Promise.all(
-      users.map(async (user) => {
-        const totalVisits = await Attendance.countDocuments({ phone: user.phone });
+    const usersData = users.map((user) => ({
+      _id: user._id.toString(),
+      name: user.name,
+      phone: user.phone,
+      joiningDate: user.joiningDate,
+      lastPaymentDate: user.lastPaymentDate,
+      lastPaymentAmount: user.lastPaymentAmount,
+      lastPaymentMonths: user.lastPaymentMonths,
+      subscriptionExpiryDate: user.subscriptionExpiryDate,
+      createdAt: user.createdAt
+    }));
 
-        return {
-          _id: user._id.toString(),
-          name: user.name,
-          phone: user.phone,
-          createdAt: user.createdAt,
-          totalVisits
-        };
-      })
-    );
-
-    return NextResponse.json({ users: usersWithStats });
+    return NextResponse.json({ users: usersData });
   } catch (error) {
     console.error('Users fetch error:', error);
     return NextResponse.json(
