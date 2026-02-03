@@ -22,38 +22,45 @@ export default function Dashboard() {
   const [markingOut, setMarkingOut] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const userStr = sessionStorage.getItem('user');
-      if (!userStr) {
+  const fetchUserData = async () => {
+    const userStr = sessionStorage.getItem('user');
+    if (!userStr) {
+      router.push('/');
+      return;
+    }
+
+    const user = JSON.parse(userStr);
+
+    try {
+      const response = await fetch('/api/user/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: user.phone }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUserData(data);
+      } else {
         router.push('/');
-        return;
       }
+    } catch (err) {
+      console.error('Failed to fetch user status:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      const user = JSON.parse(userStr);
-
-      try {
-        const response = await fetch('/api/user/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: user.phone }),
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-          setUserData(data);
-        } else {
-          router.push('/');
-        }
-      } catch (err) {
-        console.error('Failed to fetch user status:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchUserData();
+
+    // Auto-refresh every 20 seconds
+    const interval = setInterval(() => {
+      fetchUserData();
+    }, 20000);
+
+    return () => clearInterval(interval);
   }, [router]);
 
   const handleMarkOut = async () => {

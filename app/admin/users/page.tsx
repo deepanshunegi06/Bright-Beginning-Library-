@@ -30,6 +30,8 @@ export default function AdminUsers() {
   const [paymentDate, setPaymentDate] = useState('');
   const [editPaymentMonths, setEditPaymentMonths] = useState<1 | 3>(1);
   const [editPaymentDate, setEditPaymentDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,6 +42,13 @@ export default function AdminUsers() {
     }
 
     fetchUsers();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchUsers();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [router]);
 
   const fetchUsers = async () => {
@@ -228,6 +237,12 @@ export default function AdminUsers() {
     }
   };
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+
   return (
     <WiFiGuard>
       <div className="min-h-screen bg-gray-50">
@@ -320,14 +335,14 @@ export default function AdminUsers() {
                         Loading...
                       </td>
                     </tr>
-                  ) : filteredUsers.length === 0 ? (
+                  ) : paginatedUsers.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-gray-500 font-medium">
                         No users found
                       </td>
                     </tr>
                   ) : (
-                    filteredUsers.map((user) => {
+                    paginatedUsers.map((user) => {
                       const paymentStatus = getPaymentStatus(user);
                       return (
                         <tr key={user._id} className="hover:bg-gray-50 transition-colors">
@@ -385,6 +400,54 @@ export default function AdminUsers() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between px-4 pb-4">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

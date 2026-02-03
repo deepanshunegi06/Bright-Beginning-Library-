@@ -20,6 +20,8 @@ export default function AdminReports() {
   const [endDate, setEndDate] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(20);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,6 +120,12 @@ export default function AdminReports() {
       alert('Failed to connect to server');
     }
   };
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRecords = filteredRecords.slice(startIndex, endIndex);
 
   return (
     <WiFiGuard>
@@ -235,14 +243,14 @@ export default function AdminReports() {
                         Loading...
                       </td>
                     </tr>
-                  ) : filteredRecords.length === 0 ? (
+                  ) : paginatedRecords.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-6 py-8 text-center text-gray-500 font-medium">
                         No records found for selected date range
                       </td>
                     </tr>
                   ) : (
-                    filteredRecords.map((record) => (
+                    paginatedRecords.map((record) => (
                       <tr key={record._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           {record.date}
@@ -284,6 +292,62 @@ export default function AdminReports() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between px-6 pb-4">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredRecords.length)} of {filteredRecords.length} records
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: Math.min(totalPages, 10) }, (_, i) => {
+                      const pageNum = currentPage <= 5 ? i + 1 : 
+                                     currentPage >= totalPages - 4 ? totalPages - 9 + i : 
+                                     currentPage - 5 + i;
+                      if (pageNum > 0 && pageNum <= totalPages) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

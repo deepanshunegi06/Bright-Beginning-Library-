@@ -29,6 +29,8 @@ export default function AdminDashboard() {
   const [expiredUsers, setExpiredUsers] = useState<PaymentAlert[]>([]);
   const [expiringSoonUsers, setExpiringSoonUsers] = useState<PaymentAlert[]>([]);
   const [showPaymentAlerts, setShowPaymentAlerts] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,6 +42,14 @@ export default function AdminDashboard() {
 
     fetchTodayData();
     fetchPaymentAlerts();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => {
+      fetchTodayData();
+      fetchPaymentAlerts();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [router]);
 
   const fetchTodayData = async () => {
@@ -168,13 +178,19 @@ export default function AdminDashboard() {
     router.push('/admin/login');
   };
 
+  // Filter and paginate data
   const filteredData = attendanceData.filter(
     (record) =>
       record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.phone.includes(searchTerm)
   );
 
-  const insideCount = filteredData.filter((r) => !r.outTime).length;
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+
+  const insideCount = attendanceData.filter((r) => !r.outTime).length;
   const totalCount = filteredData.length;
 
   const getCrowdStatus = () => {
@@ -435,14 +451,14 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredData.length === 0 ? (
+                  {paginatedData.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-4 py-8 text-center text-gray-500 font-medium">
                         {searchTerm ? 'No matching records found' : 'No attendance records for today yet'}
                       </td>
                     </tr>
                   ) : (
-                    filteredData.map((record) => (
+                    paginatedData.map((record) => (
                       <tr key={record._id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {record.name}
@@ -489,6 +505,54 @@ export default function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between px-4">
+                <div className="text-sm text-gray-600">
+                  Showing {startIndex + 1} to {Math.min(endIndex, filteredData.length)} of {filteredData.length} records
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                          currentPage === page
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
