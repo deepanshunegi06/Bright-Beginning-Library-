@@ -26,20 +26,37 @@ export async function GET(request: NextRequest) {
   if (userLat && userLon) {
     const libraryLat = parseFloat(process.env.LIBRARY_LATITUDE || '0');
     const libraryLon = parseFloat(process.env.LIBRARY_LONGITUDE || '0');
+    const homeLat = parseFloat(process.env.HOME_LATITUDE || '0');
+    const homeLon = parseFloat(process.env.HOME_LONGITUDE || '0');
     const maxRadius = parseFloat(process.env.LIBRARY_RADIUS_METERS || '100');
 
     if (libraryLat !== 0 && libraryLon !== 0) {
-      const distance = calculateDistance(
+      const distanceToLibrary = calculateDistance(
         libraryLat,
         libraryLon,
         parseFloat(userLat),
         parseFloat(userLon)
       );
 
+      // Also check home location if configured (for development/testing)
+      let distanceToHome = Infinity;
+      if (homeLat !== 0 && homeLon !== 0) {
+        distanceToHome = calculateDistance(
+          homeLat,
+          homeLon,
+          parseFloat(userLat),
+          parseFloat(userLon)
+        );
+      }
+
+      // User is connected if within range of either library OR home
+      const isConnected = distanceToLibrary <= maxRadius || distanceToHome <= maxRadius;
+      const closestDistance = Math.min(distanceToLibrary, distanceToHome);
+
       const response = NextResponse.json({
-        connected: distance <= maxRadius,
+        connected: isConnected,
         method: 'geolocation',
-        distance: Math.round(distance),
+        distance: Math.round(closestDistance),
         maxRadius: maxRadius,
         timestamp: Date.now()
       });
