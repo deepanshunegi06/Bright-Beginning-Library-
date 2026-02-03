@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Check if user exists
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ phone }).select('name phone').lean();
 
     if (!user) {
       return NextResponse.json(

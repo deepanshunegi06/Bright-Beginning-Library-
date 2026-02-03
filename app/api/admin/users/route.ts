@@ -9,7 +9,7 @@ export async function GET() {
   try {
     await connectDB();
 
-    const users = await User.find({}).sort({ joiningDate: -1 });
+    const users = await User.find({}).sort({ joiningDate: -1 }).lean();
 
     const usersData = users.map((user) => ({
       _id: user._id.toString(),

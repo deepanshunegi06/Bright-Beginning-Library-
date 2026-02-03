@@ -31,8 +31,10 @@ const AttendanceSchema = new Schema<IAttendance>({
   },
 });
 
-// Compound index to ensure one record per phone per day
+// Indexes for faster queries
 AttendanceSchema.index({ phone: 1, date: 1 }, { unique: true });
+AttendanceSchema.index({ date: 1 });
+AttendanceSchema.index({ phone: 1 });
 
 const Attendance = models.Attendance || model<IAttendance>('Attendance', AttendanceSchema);
 

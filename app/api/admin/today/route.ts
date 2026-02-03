@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         $gte: today,
         $lt: tomorrow
       }
-    }).sort({ inTime: 1 });
+    }).sort({ inTime: 1 }).lean();
 
     // Format records for frontend
     const formattedRecords = records.map(record => ({

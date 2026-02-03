@@ -40,12 +40,12 @@ export default function AdminReports() {
 
     fetchReports(weekAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
 
-    // Auto-refresh every 30 seconds if date range is selected
+    // Auto-refresh every 60 seconds if date range is selected
     const interval = setInterval(() => {
       if (startDate && endDate) {
         fetchReports(startDate, endDate);
       }
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [router, startDate, endDate]);

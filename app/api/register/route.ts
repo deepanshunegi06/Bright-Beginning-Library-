@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const dayAfterYesterday = new Date(today);
 
     // Check if user exists
-    let user = await User.findOne({ phone });
+    let user = await User.findOne({ phone }).select('name phone');
 
     if (!user) {
       // Create new user

@@ -43,11 +43,11 @@ export default function AdminDashboard() {
     fetchTodayData();
     fetchPaymentAlerts();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every 60 seconds
     const interval = setInterval(() => {
       fetchTodayData();
       fetchPaymentAlerts();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [router]);

@@ -55,10 +55,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetchUserData();
 
-    // Auto-refresh every 20 seconds
+    // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchUserData();
-    }, 20000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [router]);

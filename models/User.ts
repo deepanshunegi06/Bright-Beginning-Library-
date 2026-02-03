@@ -53,6 +53,11 @@ const UserSchema = new Schema<IUser>({
   },
 });
 
+// Indexes for faster queries
+UserSchema.index({ phone: 1 }, { unique: true });
+UserSchema.index({ joiningDate: -1 });
+UserSchema.index({ subscriptionExpiryDate: 1 });
+
 const User = models.User || model<IUser>('User', UserSchema);
 
 export default User;

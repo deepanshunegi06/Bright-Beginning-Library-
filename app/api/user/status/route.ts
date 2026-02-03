@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user
-    const user = await User.findOne({ phone });
+    const user = await User.findOne({ phone }).select('name phone joiningDate subscriptionExpiryDate').lean();
 
     if (!user) {
       return NextResponse.json(
