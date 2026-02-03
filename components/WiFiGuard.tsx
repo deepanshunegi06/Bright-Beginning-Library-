@@ -8,7 +8,15 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Skip location check for admin routes
+  const isAdminRoute = pathname?.startsWith('/admin');
+
   useEffect(() => {
+    // Allow admin routes without location check
+    if (isAdminRoute) {
+      setIsConnected(true);
+      return;
+    }
     // Check WiFi connection
     const checkWiFi = async () => {
       // For development/testing: Allow bypass with localStorage
@@ -111,7 +119,7 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
       window.removeEventListener('offline', handleOffline);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isAdminRoute]);
 
   // Loading state
   if (isConnected === null) {
