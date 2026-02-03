@@ -39,7 +39,16 @@ export default function AdminReports() {
     setStartDate(weekAgo.toISOString().split('T')[0]);
 
     fetchReports(weekAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
-  }, [router]);
+
+    // Auto-refresh every 30 seconds if date range is selected
+    const interval = setInterval(() => {
+      if (startDate && endDate) {
+        fetchReports(startDate, endDate);
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [router, startDate, endDate]);
 
   const fetchReports = async (start: string, end: string) => {
     setLoading(true);
