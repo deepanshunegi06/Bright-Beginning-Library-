@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import { connectDB } from '@/lib/db';
 import Attendance from '@/models/Attendance';
 
 export async function POST(request: NextRequest) {
@@ -15,10 +15,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Find today's attendance record
-    const todayRecord = await Attendance.findOne({ phone, date: today });
+    const todayRecord = await Attendance.findOne({ 
+      phone, 
+      date: { $gte: today, $lt: tomorrow } 
+    });
 
     if (!todayRecord) {
       return NextResponse.json(

@@ -170,15 +170,19 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
           </p>
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
             <p className="text-sm text-amber-800">
-              <strong>📍 Location Required:</strong>
-              <br />
-              • <strong>Must allow location access</strong> to enter
-              <br />
-              • Move near a window if indoors (better GPS signal)
-              <br />
-              • Works best on mobile phones
-              <br />
-              • Blocking location will prevent access
+              <strong>📍 Location Blocked? Follow these steps:</strong>
+              <br /><br />
+              <strong>On Chrome/Edge:</strong>
+              <br />• Click the 🔒 lock icon in address bar
+              <br />• Click "Site settings"
+              <br />• Find "Location" → Select "Allow"
+              <br />• Refresh the page
+              <br /><br />
+              <strong>On Mobile:</strong>
+              <br />• Tap address bar → Tap 🔒 or (i) icon
+              <br />• Go to "Permissions" or "Site settings"
+              <br />• Enable "Location"
+              <br />• Refresh the page
             </p>
           </div>
           <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -188,13 +192,16 @@ export default function WiFiGuard({ children }: { children: React.ReactNode }) {
           </div>
           <button
             onClick={() => {
-              setIsConnected(null); // Show loading
-              checkWiFi(); // Request location again
+              setIsConnected(null);
+              setTimeout(() => checkWiFi(), 100);
             }}
-            className="w-full bg-library-blue text-white py-3 rounded-lg font-semibold hover:bg-library-blue-dark transition-colors"
+            className="w-full bg-library-blue text-white py-3 rounded-lg font-semibold hover:bg-library-blue-dark transition-colors mb-3"
           >
-            {locationDenied ? 'Grant Location Access' : 'Retry Connection'}
+            Retry After Allowing Location
           </button>
+          <p className="text-xs text-gray-500 text-center">
+            If blocked by mistake, use steps above to reset permission
+          </p>
         </div>
       </div>
     );

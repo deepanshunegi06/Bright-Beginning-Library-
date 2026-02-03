@@ -3,7 +3,7 @@ import mongoose, { Schema, model, models } from 'mongoose';
 export interface IUser {
   name: string;
   phone: string;
-  registeredAt: Date;
+  createdAt: Date;
 }
 
 const UserSchema = new Schema<IUser>({
@@ -16,7 +16,7 @@ const UserSchema = new Schema<IUser>({
     required: true,
     unique: true,
   },
-  registeredAt: {
+  createdAt: {
     type: Date,
     default: Date.now,
   },

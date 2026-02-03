@@ -227,6 +227,22 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Actions */}
+          <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => router.push('/dashboard/history')}
+              className="bg-blue-100 text-library-blue py-3 rounded-xl font-semibold hover:bg-blue-200 transition-colors"
+            >
+              📊 My History
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/profile')}
+              className="bg-purple-100 text-purple-700 py-3 rounded-xl font-semibold hover:bg-purple-200 transition-colors"
+            >
+              ✏️ Edit Profile
+            </button>
+          </div>
+
           {/* Mark Out Button */}
           {isInside && !userData.alreadyCompletedToday && (
             <button
@@ -237,16 +253,16 @@ export default function Dashboard() {
             </button>
           )}
 
-          {/* Back to Home */}
+          {/* Logout */}
           <div className="text-center mt-6">
             <button
               onClick={() => {
                 sessionStorage.removeItem('user');
                 router.push('/');
               }}
-              className="text-gray-600 hover:text-library-blue transition-colors"
+              className="text-red-600 hover:text-red-700 transition-colors font-medium"
             >
-              ← Back to Home
+              🚪 Logout
             </button>
           </div>
         </div>

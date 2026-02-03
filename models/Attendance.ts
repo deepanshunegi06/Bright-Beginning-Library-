@@ -3,7 +3,7 @@ import mongoose, { Schema, model, models } from 'mongoose';
 export interface IAttendance {
   name: string;
   phone: string;
-  date: string; // Format: "YYYY-MM-DD"
+  date: Date;
   inTime: string;
   outTime: string | null;
 }
@@ -18,7 +18,7 @@ const AttendanceSchema = new Schema<IAttendance>({
     required: true,
   },
   date: {
-    type: String,
+    type: Date,
     required: true,
   },
   inTime: {
