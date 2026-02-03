@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       name: user.name,
-      phone: user.phone
+      phone: user.phone,
+      todayInTime: inTime,
+      todayOutTime: null
     });
   } catch (error) {
     console.error('Sign in error:', error);
