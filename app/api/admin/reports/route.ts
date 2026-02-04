@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         $gte: start,
         $lte: end
       }
-    }).sort({ date: -1, inTime: -1 }).lean();
+    }).sort({ date: -1, inTime: -1 });
 
     const formattedRecords = records.map(record => ({
       _id: record._id.toString(),
