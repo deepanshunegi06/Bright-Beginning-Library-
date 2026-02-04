@@ -120,13 +120,6 @@ export default function AdminLogin() {
                 {loading ? 'Logging in...' : 'Login'}
               </button>
             </form>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-xs text-gray-600 text-center">
-                <strong>Default Credentials:</strong><br />
-                Username: owner | Password: owner123
-              </p>
-            </div>
           </div>
 
           <div className="text-center mt-6">
