@@ -15,7 +15,7 @@ export async function GET() {
     // Get expired subscriptions
     const expiredUsers = await User.find({
       subscriptionExpiryDate: { $lt: now }
-    }).select('name phone subscriptionExpiryDate').lean();
+    }).select('name phone subscriptionExpiryDate');
 
     // Get expiring soon (within 7 days)
     const expiringSoonUsers = await User.find({
@@ -23,12 +23,12 @@ export async function GET() {
         $gte: now,
         $lte: sevenDaysFromNow
       }
-    }).select('name phone subscriptionExpiryDate').lean();
+    }).select('name phone subscriptionExpiryDate');
 
     // Get users with no payment
     const noPaymentUsers = await User.find({
       subscriptionExpiryDate: null
-    }).select('name phone').lean();
+    }).select('name phone');
 
     return NextResponse.json({
       expired: expiredUsers.map(u => ({

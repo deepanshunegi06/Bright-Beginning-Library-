@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     // Check if user exists
-    const user = await User.findOne({ phone }).select('name phone').lean();
+    const user = await User.findOne({ phone }).select('name phone');
 
     if (!user) {
       return NextResponse.json(
@@ -38,15 +38,16 @@ export async function POST(request: NextRequest) {
 
     const existingAttendance = await Attendance.findOne({
       phone,
-      date: { $gte: today, $lt: tomorrow },
-      outTime: null
+      date: { $gte: today, $lt: tomorrow }
     });
 
     if (existingAttendance) {
       return NextResponse.json({
         name: user.name,
         phone: user.phone,
-        alreadyIn: true
+        alreadyIn: true,
+        todayInTime: existingAttendance.inTime,
+        todayOutTime: existingAttendance.outTime
       });
     }
 
