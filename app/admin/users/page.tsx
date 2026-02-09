@@ -47,6 +47,7 @@ export default function AdminUsers() {
   const [newUserAadhaarPreview, setNewUserAadhaarPreview] = useState<string | null>(null);
   const [addingUser, setAddingUser] = useState(false);
   const [addUserMessage, setAddUserMessage] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'expired' | 'expiring' | 'no-payment'>('all');
 
   const router = useRouter();
 
@@ -94,11 +95,38 @@ export default function AdminUsers() {
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
-    const filtered = users.filter(
+    applyFilters(term, paymentFilter);
+  };
+
+  const handlePaymentFilter = (filter: 'all' | 'paid' | 'expired' | 'expiring' | 'no-payment') => {
+    setPaymentFilter(filter);
+    applyFilters(searchTerm, filter);
+  };
+
+  const applyFilters = (term: string, filter: 'all' | 'paid' | 'expired' | 'expiring' | 'no-payment') => {
+    let filtered = users.filter(
       (u) =>
         u.name.toLowerCase().includes(term.toLowerCase()) ||
         u.phone.includes(term)
     );
+
+    if (filter !== 'all') {
+      filtered = filtered.filter(u => {
+        const paymentStatus = getPaymentStatus(u);
+        
+        if (filter === 'no-payment') {
+          return paymentStatus.status === 'No Payment';
+        } else if (filter === 'expired') {
+          return paymentStatus.status === 'Expired';
+        } else if (filter === 'expiring') {
+          return paymentStatus.badge === '🟡'; // Expiring soon
+        } else if (filter === 'paid') {
+          return paymentStatus.badge === '🟢'; // Active paid
+        }
+        return true;
+      });
+    }
+
     setFilteredUsers(filtered);
   };
 
@@ -212,10 +240,6 @@ export default function AdminUsers() {
   };
 
   const getPaymentStatus = (user: User) => {
-    if (user.status === 'paused') {
-      return { status: 'Paused', color: 'bg-purple-100 text-purple-800', badge: '⏸️' };
-    }
-
     if (!user.subscriptionExpiryDate) {
       return { status: 'No Payment', color: 'bg-gray-100 text-gray-700', badge: '⚪' };
     }
@@ -490,6 +514,71 @@ export default function AdminUsers() {
                 className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50 font-medium text-sm"
               >
                 {loading ? 'Loading...' : 'Refresh'}
+              </button>
+            </div>
+            {/* Payment Status Filters */}
+            <div className="flex flex-wrap gap-2 mt-3">
+              <button
+                onClick={() => handlePaymentFilter('all')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  paymentFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All ({users.length})
+              </button>
+              <button
+                onClick={() => handlePaymentFilter('paid')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  paymentFilter === 'paid'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🟢 Paid ({users.filter(u => {
+                  const status = getPaymentStatus(u);
+                  return status.badge === '🟢';
+                }).length})
+              </button>
+              <button
+                onClick={() => handlePaymentFilter('expiring')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  paymentFilter === 'expiring'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🟡 Expiring Soon ({users.filter(u => {
+                  const status = getPaymentStatus(u);
+                  return status.badge === '🟡';
+                }).length})
+              </button>
+              <button
+                onClick={() => handlePaymentFilter('expired')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  paymentFilter === 'expired'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                🔴 Expired ({users.filter(u => {
+                  const status = getPaymentStatus(u);
+                  return status.status === 'Expired';
+                }).length})
+              </button>
+              <button
+                onClick={() => handlePaymentFilter('no-payment')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  paymentFilter === 'no-payment'
+                    ? 'bg-gray-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                ⚪ No Payment ({users.filter(u => {
+                  const status = getPaymentStatus(u);
+                  return status.status === 'No Payment';
+                }).length})
               </button>
             </div>
           </div>
