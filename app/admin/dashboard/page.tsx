@@ -21,6 +21,12 @@ interface PaymentAlert {
   daysLeft?: number;
 }
 
+interface NoPaymentUser {
+  _id: string;
+  name: string;
+  phone: string;
+}
+
 export default function AdminDashboard() {
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,6 +34,7 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [expiredUsers, setExpiredUsers] = useState<PaymentAlert[]>([]);
   const [expiringSoonUsers, setExpiringSoonUsers] = useState<PaymentAlert[]>([]);
+  const [noPaymentUsers, setNoPaymentUsers] = useState<NoPaymentUser[]>([]);
   const [showPaymentAlerts, setShowPaymentAlerts] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15);
@@ -90,6 +97,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         setExpiredUsers(data.expired || []);
         setExpiringSoonUsers(data.expiringSoon || []);
+        setNoPaymentUsers(data.noPayment || []);
       }
     } catch (err) {
       console.error('Failed to fetch payment alerts:', err);
@@ -332,7 +340,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Payment Alerts */}
-          {(expiredUsers.length > 0 || expiringSoonUsers.length > 0) && (
+          {(expiredUsers.length > 0 || expiringSoonUsers.length > 0 || noPaymentUsers.length > 0) && (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
               <div className="flex items-start justify-between">
                 <div className="flex items-start">
@@ -354,6 +362,8 @@ export default function AdminDashboard() {
                       Payment Alerts
                     </h3>
                     <p className="text-sm text-yellow-700 mt-1">
+                      {noPaymentUsers.length > 0 && `${noPaymentUsers.length} no payment`}
+                      {noPaymentUsers.length > 0 && (expiredUsers.length > 0 || expiringSoonUsers.length > 0) && ', '}
                       {expiredUsers.length > 0 && `${expiredUsers.length} expired`}
                       {expiredUsers.length > 0 && expiringSoonUsers.length > 0 && ', '}
                       {expiringSoonUsers.length > 0 && `${expiringSoonUsers.length} expiring soon`}
