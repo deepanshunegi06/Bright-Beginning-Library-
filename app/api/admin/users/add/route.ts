@@ -55,7 +55,6 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       phone: phone.trim(),
       joiningDate: joining,
-      status: 'active',
       aadhaarCardImage: aadhaarImage || null,
       aadhaarUploadedAt: aadhaarImage ? istNow : null,
     });

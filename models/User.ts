@@ -10,9 +10,6 @@ export interface IUser {
   subscriptionExpiryDate?: Date;
   aadhaarCardImage?: string;
   aadhaarUploadedAt?: Date;
-  status: 'active' | 'paused';
-  pausedAt?: Date;
-  pauseReason?: string;
   createdAt: Date;
 }
 
@@ -54,19 +51,6 @@ const UserSchema = new Schema<IUser>({
   },
   aadhaarUploadedAt: {
     type: Date,
-    default: null,
-  },
-  status: {
-    type: String,
-    enum: ['active', 'paused'],
-    default: 'active',
-  },
-  pausedAt: {
-    type: Date,
-    default: null,
-  },
-  pauseReason: {
-    type: String,
     default: null,
   },
   createdAt: {
