@@ -13,6 +13,7 @@ interface UserData {
   alreadyCompletedToday?: boolean;
   subscriptionExpiryDate?: string;
   joiningDate?: string;
+  hasAadhaar?: boolean;
 }
 
 export default function Dashboard() {
@@ -55,10 +56,10 @@ export default function Dashboard() {
   useEffect(() => {
     fetchUserData();
 
-    // Auto-refresh every 30 seconds
+    // Auto-refresh every minute
     const interval = setInterval(() => {
       fetchUserData();
-    }, 30000);
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [router]);
@@ -235,6 +236,41 @@ export default function Dashboard() {
                 );
               }
             })()}
+
+            {/* Aadhaar Card Upload Notification */}
+            {!userData.hasAadhaar && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start">
+                  <svg
+                    className="w-6 h-6 text-blue-600 mr-3 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-blue-800 mb-1">
+                      📄 Upload Aadhaar Card
+                    </h3>
+                    <p className="text-sm text-blue-700 mb-3">
+                      Please upload your Aadhaar card for verification and record purposes.
+                    </p>
+                    <button
+                      onClick={() => router.push('/dashboard/profile')}
+                      className="text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors"
+                    >
+                      Upload Now →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Forgot Yesterday Alert */}
             {userData.forgotYesterday && (

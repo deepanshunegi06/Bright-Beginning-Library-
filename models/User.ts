@@ -8,6 +8,11 @@ export interface IUser {
   lastPaymentAmount?: number;
   lastPaymentMonths?: number;
   subscriptionExpiryDate?: Date;
+  aadhaarCardImage?: string;
+  aadhaarUploadedAt?: Date;
+  status: 'active' | 'paused';
+  pausedAt?: Date;
+  pauseReason?: string;
   createdAt: Date;
 }
 
@@ -43,6 +48,27 @@ const UserSchema = new Schema<IUser>({
   subscriptionExpiryDate: {
     type: Date,
   },
+  aadhaarCardImage: {
+    type: String,
+    default: null,
+  },
+  aadhaarUploadedAt: {
+    type: Date,
+    default: null,
+  },
+  status: {
+    type: String,
+    enum: ['active', 'paused'],
+    default: 'active',
+  },
+  pausedAt: {
+    type: Date,
+    default: null,
+  },
+  pauseReason: {
+    type: String,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: () => {
@@ -54,7 +80,6 @@ const UserSchema = new Schema<IUser>({
 });
 
 // Indexes for faster queries
-UserSchema.index({ phone: 1 }, { unique: true });
 UserSchema.index({ joiningDate: -1 });
 UserSchema.index({ subscriptionExpiryDate: 1 });
 

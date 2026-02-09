@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user
-    const user = await User.findOne({ phone }).select('name phone joiningDate subscriptionExpiryDate');
+    const user = await User.findOne({ phone }).select('name phone joiningDate subscriptionExpiryDate aadhaarCardImage');
 
     if (!user) {
       return NextResponse.json(
@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         forgotYesterday,
         subscriptionExpiryDate: user.subscriptionExpiryDate,
         joiningDate: user.joiningDate,
+        hasAadhaar: !!user.aadhaarCardImage,
       });
     }
 
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
         alreadyCompletedToday: true,
         subscriptionExpiryDate: user.subscriptionExpiryDate,
         joiningDate: user.joiningDate,
+        hasAadhaar: !!user.aadhaarCardImage,
       });
     }
 
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
       forgotYesterday,
       subscriptionExpiryDate: user.subscriptionExpiryDate,
       joiningDate: user.joiningDate,
+      hasAadhaar: !!user.aadhaarCardImage,
     });
   } catch (error: any) {
     console.error('User status error:', error);

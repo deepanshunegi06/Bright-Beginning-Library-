@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         { status: 404 }
       );
     }
+    }
 
     // Check if user already marked IN today (IST)
     const now = new Date();

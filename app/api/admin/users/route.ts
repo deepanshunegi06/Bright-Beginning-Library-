@@ -9,7 +9,10 @@ export async function GET() {
   try {
     await connectDB();
 
-    const users = await User.find({}).sort({ joiningDate: -1 });
+    // Exclude aadhaarCardImage to reduce payload size and improve performance
+    const users = await User.find({})
+      .select('name phone joiningDate lastPaymentDate lastPaymentAmount lastPaymentMonths subscriptionExpiryDate aadhaarUploadedAt createdAt')
+      .sort({ joiningDate: -1 });
 
     const usersData = users.map((user) => ({
       _id: user._id.toString(),
@@ -20,6 +23,8 @@ export async function GET() {
       lastPaymentAmount: user.lastPaymentAmount,
       lastPaymentMonths: user.lastPaymentMonths,
       subscriptionExpiryDate: user.subscriptionExpiryDate,
+      hasAadhaar: !!user.aadhaarUploadedAt,
+      aadhaarUploadedAt: user.aadhaarUploadedAt,
       createdAt: user.createdAt
     }));
 
