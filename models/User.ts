@@ -1,9 +1,10 @@
 import mongoose, { Schema, model, models } from 'mongoose';
+import { getISTNow } from '@/lib/utils';
 
 export interface IUser {
   name: string;
   phone: string;
-  joiningDate: Date;
+  joiningDate?: Date;
   lastPaymentDate?: Date;
   lastPaymentAmount?: number;
   lastPaymentMonths?: number;
@@ -25,12 +26,8 @@ const UserSchema = new Schema<IUser>({
   },
   joiningDate: {
     type: Date,
-    required: true,
-    default: () => {
-      const now = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      return new Date(now.getTime() + istOffset);
-    },
+    required: false,
+    default: null,
   },
   lastPaymentDate: {
     type: Date,
@@ -55,11 +52,7 @@ const UserSchema = new Schema<IUser>({
   },
   createdAt: {
     type: Date,
-    default: () => {
-      const now = new Date();
-      const istOffset = 5.5 * 60 * 60 * 1000;
-      return new Date(now.getTime() + istOffset);
-    },
+    default: () => getISTNow(),
   },
 });
 

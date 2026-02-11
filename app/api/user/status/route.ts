@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Attendance from '@/models/Attendance';
+import { getISTToday, getISTTomorrow } from '@/lib/utils';
+import { ONE_DAY_MS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,17 +28,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use IST timezone
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset);
-    const today = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    // Use IST timezone with utility functions
+    const today = getISTToday();
+    const tomorrow = getISTTomorrow();
+    const yesterday = new Date(today.getTime() - ONE_DAY_MS);
 
     // Check yesterday's record
     const yesterdayRecord = await Attendance.findOne({ 

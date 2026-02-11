@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import Attendance from '@/models/Attendance';
+import { getISTToday, getISTTomorrow } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,14 +19,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use IST timezone
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset);
-    const today = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Use IST timezone with utility functions
+    const today = getISTToday();
+    const tomorrow = getISTTomorrow();
 
     // Delete today's record
     const result = await Attendance.deleteOne({ 

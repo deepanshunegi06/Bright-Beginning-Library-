@@ -3,20 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import WiFiGuard from '@/components/WiFiGuard';
+import { getPaymentStatus } from '@/lib/payment-utils';
+import { formatDate, formatDateTime, getTodayInputValue, sanitizePhone } from '@/lib/utils';
+import { processImage } from '@/lib/image-utils';
+import { 
+  ADMIN_SESSION_KEY, 
+  AUTO_REFRESH_INTERVAL_MS,
+  DEFAULT_PAGE_SIZE,
+  ERROR_MESSAGES,
+  SUCCESS_MESSAGES 
+} from '@/lib/constants';
+import type { User, PaymentFilter, PaymentDuration } from '@/types';
 
-interface User {
-  _id: string;
-  name: string;
-  phone: string;
-  joiningDate: string;
-  lastPaymentDate?: string;
-  lastPaymentAmount?: number;
-  lastPaymentMonths?: number;
-  subscriptionExpiryDate?: string;
-  hasAadhaar?: boolean;
-  aadhaarUploadedAt?: string;
-  createdAt: string;
-}
+// User type imported from @/types
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -26,14 +25,15 @@ export default function AdminUsers() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editName, setEditName] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editJoiningDate, setEditJoiningDate] = useState('');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentUser, setPaymentUser] = useState<User | null>(null);
-  const [paymentMonths, setPaymentMonths] = useState<1 | 3>(1);
+  const [paymentMonths, setPaymentMonths] = useState<PaymentDuration>(1);
   const [paymentDate, setPaymentDate] = useState('');
-  const [editPaymentMonths, setEditPaymentMonths] = useState<1 | 3>(1);
+  const [editPaymentMonths, setEditPaymentMonths] = useState<PaymentDuration>(1);
   const [editPaymentDate, setEditPaymentDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(15);
+  const [itemsPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [viewingAadhaar, setViewingAadhaar] = useState<User | null>(null);
   const [aadhaarImage, setAadhaarImage] = useState<string | null>(null);
   const [loadingAadhaar, setLoadingAadhaar] = useState(false);
@@ -47,12 +47,12 @@ export default function AdminUsers() {
   const [newUserAadhaarPreview, setNewUserAadhaarPreview] = useState<string | null>(null);
   const [addingUser, setAddingUser] = useState(false);
   const [addUserMessage, setAddUserMessage] = useState('');
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'expired' | 'expiring' | 'no-payment'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
 
   const router = useRouter();
 
   useEffect(() => {
-    const isAdmin = sessionStorage.getItem('admin');
+    const isAdmin = sessionStorage.getItem(ADMIN_SESSION_KEY);
     if (!isAdmin) {
       router.push('/admin/login');
       return;
@@ -63,7 +63,7 @@ export default function AdminUsers() {
     // Auto-refresh every 2 minutes
     const interval = setInterval(() => {
       fetchUsers();
-    }, 120000);
+    }, AUTO_REFRESH_INTERVAL_MS);
 
     return () => clearInterval(interval);
   }, [router]);
@@ -80,14 +80,23 @@ export default function AdminUsers() {
           'Expires': '0'
         }
       });
-      const data = await response.json();
+      const result = await response.json();
 
       if (response.ok) {
-        setUsers(data.users);
-        setFilteredUsers(data.users);
+        // Handle both old and new API response formats
+        const users = result.data?.users || result.users || [];
+        setUsers(users);
+        setFilteredUsers(users);
+      } else {
+        // On error, reset to empty arrays
+        setUsers([]);
+        setFilteredUsers([]);
       }
     } catch (err) {
       console.error('Failed to fetch users:', err);
+      // On error, reset to empty arrays
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setLoading(false);
     }
@@ -98,13 +107,16 @@ export default function AdminUsers() {
     applyFilters(term, paymentFilter);
   };
 
-  const handlePaymentFilter = (filter: 'all' | 'paid' | 'expired' | 'expiring' | 'no-payment') => {
+  const handlePaymentFilter = (filter: PaymentFilter) => {
     setPaymentFilter(filter);
     applyFilters(searchTerm, filter);
   };
 
-  const applyFilters = (term: string, filter: 'all' | 'paid' | 'expired' | 'expiring' | 'no-payment') => {
-    let filtered = users.filter(
+  const applyFilters = (term: string, filter: PaymentFilter) => {
+    // Ensure users array is safe
+    const safeUsersList = users || [];
+    
+    let filtered = safeUsersList.filter(
       (u) =>
         u.name.toLowerCase().includes(term.toLowerCase()) ||
         u.phone.includes(term)
@@ -134,8 +146,9 @@ export default function AdminUsers() {
     setEditingUser(user);
     setEditName(user.name);
     setEditPhone(user.phone);
-    setEditPaymentMonths((user.lastPaymentMonths === 3 ? 3 : 1) as 1 | 3);
-    setEditPaymentDate(user.lastPaymentDate ? new Date(user.lastPaymentDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+    setEditJoiningDate(user.joiningDate ? new Date(user.joiningDate).toISOString().split('T')[0] : '');
+    setEditPaymentMonths((user.lastPaymentMonths === 3 ? 3 : 1));
+    setEditPaymentDate(user.lastPaymentDate ? new Date(user.lastPaymentDate).toISOString().split('T')[0] : getTodayInputValue());
   };
 
   const handleSaveEdit = async () => {
@@ -152,6 +165,7 @@ export default function AdminUsers() {
           userId: editingUser._id,
           name: editName.trim(),
           phone: editPhone.trim(),
+          joiningDate: editJoiningDate || null,
           oldPhone: editingUser.phone
         }),
       });
@@ -236,24 +250,6 @@ export default function AdminUsers() {
       }
     } catch (err) {
       alert('Failed to connect to server');
-    }
-  };
-
-  const getPaymentStatus = (user: User) => {
-    if (!user.subscriptionExpiryDate) {
-      return { status: 'No Payment', color: 'bg-gray-100 text-gray-700', badge: '⚪' };
-    }
-
-    const expiry = new Date(user.subscriptionExpiryDate);
-    const now = new Date();
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (daysUntilExpiry < 0) {
-      return { status: 'Expired', color: 'bg-red-100 text-red-800', badge: '🔴' };
-    } else if (daysUntilExpiry <= 7) {
-      return { status: `${daysUntilExpiry}d left`, color: 'bg-yellow-100 text-yellow-800', badge: '🟡' };
-    } else {
-      return { status: 'Active', color: 'bg-green-100 text-green-800', badge: '🟢' };
     }
   };
 
@@ -344,68 +340,20 @@ export default function AdminUsers() {
     }
   };
 
-  const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-
-          const MAX_WIDTH = 1200;
-          const MAX_HEIGHT = 1200;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
-          } else {
-            reject(new Error('Failed to get canvas context'));
-          }
-        };
-        img.onerror = () => reject(new Error('Failed to load image'));
-        img.src = e.target?.result as string;
-      };
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsDataURL(file);
-    });
-  };
-
   const handleNewUserAadhaarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
-      setAddUserMessage('❌ Only JPEG, PNG, or WebP images are allowed');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setAddUserMessage('❌ File size must be less than 5MB');
-      return;
-    }
-
     try {
-      const compressed = await compressImage(file);
-      setNewUserAadhaar(compressed);
-      setNewUserAadhaarPreview(compressed);
+      const result = await processImage(file);
+      
+      if (!result.success) {
+        setAddUserMessage(`❌ ${result.error}`);
+        return;
+      }
+
+      setNewUserAadhaar(result.data!);
+      setNewUserAadhaarPreview(result.data!);
       setAddUserMessage('');
     } catch (err) {
       setAddUserMessage('❌ Failed to process image');
@@ -462,11 +410,13 @@ export default function AdminUsers() {
     }
   };
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  // Pagination logic with safe defaults
+  const safeUsers = users || [];
+  const safeFilteredUsers = filteredUsers || [];
+  const totalPages = Math.ceil(safeFilteredUsers.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+  const paginatedUsers = safeFilteredUsers.slice(startIndex, endIndex);
 
   return (
     <WiFiGuard>
@@ -536,7 +486,7 @@ export default function AdminUsers() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                🟢 Paid ({users.filter(u => {
+                🟢 Paid ({safeUsers.filter(u => {
                   const status = getPaymentStatus(u);
                   return status.badge === '🟢';
                 }).length})
@@ -549,7 +499,7 @@ export default function AdminUsers() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                🟡 Expiring Soon ({users.filter(u => {
+                🟡 Expiring Soon ({safeUsers.filter(u => {
                   const status = getPaymentStatus(u);
                   return status.badge === '🟡';
                 }).length})
@@ -562,7 +512,7 @@ export default function AdminUsers() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                🔴 Expired ({users.filter(u => {
+                🔴 Expired ({safeUsers.filter(u => {
                   const status = getPaymentStatus(u);
                   return status.status === 'Expired';
                 }).length})
@@ -575,7 +525,7 @@ export default function AdminUsers() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                ⚪ No Payment ({users.filter(u => {
+                ⚪ No Payment ({safeUsers.filter(u => {
                   const status = getPaymentStatus(u);
                   return status.status === 'No Payment';
                 }).length})
@@ -588,7 +538,7 @@ export default function AdminUsers() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Registered Users</p>
-                <p className="text-4xl font-bold text-gray-800">{filteredUsers.length}</p>
+                <p className="text-4xl font-bold text-gray-800">{safeFilteredUsers.length}</p>
               </div>
               <div className="bg-blue-100 p-4 rounded-lg">
                 <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,6 +561,9 @@ export default function AdminUsers() {
                       Phone
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Joining Date
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Last Payment
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -630,13 +583,13 @@ export default function AdminUsers() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500 font-medium">
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500 font-medium">
                         Loading...
                       </td>
                     </tr>
                   ) : paginatedUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500 font-medium">
+                      <td colSpan={8} className="px-4 py-8 text-center text-gray-500 font-medium">
                         No users found
                       </td>
                     </tr>
@@ -652,11 +605,10 @@ export default function AdminUsers() {
                             {user.phone}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {user.lastPaymentDate ? new Date(user.lastPaymentDate).toLocaleDateString('en-IN', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric'
-                            }) : 'No payment yet'}
+                            {user.joiningDate ? formatDate(user.joiningDate) : <span className="text-gray-400 italic">Not set</span>}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {user.lastPaymentDate ? formatDate(user.lastPaymentDate) : 'No payment yet'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${paymentStatus.color}`}>
@@ -664,15 +616,7 @@ export default function AdminUsers() {
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                            {user.subscriptionExpiryDate ? (
-                              new Date(user.subscriptionExpiryDate).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric'
-                              })
-                            ) : (
-                              'N/A'
-                            )}
+                            {user.subscriptionExpiryDate ? formatDate(user.subscriptionExpiryDate) : 'N/A'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm">
                             {user.hasAadhaar ? (
@@ -723,7 +667,7 @@ export default function AdminUsers() {
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between px-4 pb-4">
                 <div className="text-sm text-gray-600">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredUsers.length)} of {filteredUsers.length} users
+                  Showing {startIndex + 1} to {Math.min(endIndex, safeFilteredUsers.length)} of {safeFilteredUsers.length} users
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -799,6 +743,19 @@ export default function AdminUsers() {
                     onChange={(e) => setEditPhone(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Joining Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editJoiningDate}
+                    onChange={(e) => setEditJoiningDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Leave empty if not set</p>
                 </div>
               </div>
 
@@ -1153,7 +1110,7 @@ export default function AdminUsers() {
                     type="tel"
                     value={newUserPhone}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      const value = sanitizePhone(e.target.value).slice(0, 10);
                       setNewUserPhone(value);
                     }}
                     placeholder="10 digit phone number"
@@ -1173,7 +1130,7 @@ export default function AdminUsers() {
                     onChange={(e) => setNewUserJoiningDate(e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-gray-900 transition-all"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Defaults to today if not specified</p>
+                  <p className="text-xs text-gray-500 mt-1">Leave empty to set later</p>
                 </div>
 
                 <div>

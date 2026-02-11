@@ -72,10 +72,13 @@ export default function AdminDashboard() {
       const data = await response.json();
 
       if (response.ok) {
-        setAttendanceData(data.records);
+        setAttendanceData(data.records || []);
+      } else {
+        setAttendanceData([]);
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
+      setAttendanceData([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

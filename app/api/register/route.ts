@@ -2,54 +2,57 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/db';
 import User from '@/models/User';
 import Attendance from '@/models/Attendance';
+import {
+  createValidationError,
+  createErrorResponse,
+  validateRequiredFields,
+  sanitizeInput,
+} from '@/lib/api-utils';
+import { getISTNow, getISTToday, getISTTomorrow, formatTimeIST } from '@/lib/utils';
+import { ONE_DAY_MS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const { name, phone } = await request.json();
-
-    if (!name || !phone) {
-      return NextResponse.json(
-        { message: 'Name and phone are required' },
-        { status: 400 }
+    const body = await request.json();
+    
+    // Validate required fields
+    const validation = validateRequiredFields(body, ['name', 'phone']);
+    if (!validation.valid) {
+      return createValidationError(
+        `${validation.missing.join(', ')} ${validation.missing.length > 1 ? 'are' : 'is'} required`
       );
     }
 
+    const { name, phone } = sanitizeInput(body);
+
     // Get today's date (IST)
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset);
-    const today = new Date(istNow.getFullYear(), istNow.getMonth(), istNow.getDate());
-    
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const dayAfterYesterday = new Date(today);
+    const today = getISTToday();
+    const tomorrow = getISTTomorrow();
+    const yesterday = new Date(today.getTime() - ONE_DAY_MS);
 
     // Check if user exists
-    let user = await User.findOne({ phone }).select('name phone');
+    let user: any = await User.findOne({ phone }).select('name phone').lean();
 
     if (!user) {
       // Create new user
-      user = await User.create({ name, phone });
+      const newUser = await User.create({ name, phone });
+      user = { _id: newUser._id, name: newUser.name, phone: newUser.phone };
     }
 
     // Check yesterday's attendance
-    const yesterdayRecord = await Attendance.findOne({ 
+    const yesterdayRecord: any = await Attendance.findOne({ 
       phone, 
       date: { $gte: yesterday, $lt: today } 
-    });
+    }).lean();
     const forgotYesterday = yesterdayRecord && !yesterdayRecord.outTime;
 
     // Check today's attendance
-    const todayRecord = await Attendance.findOne({ 
+    const todayRecord: any = await Attendance.findOne({ 
       phone, 
       date: { $gte: today, $lt: tomorrow } 
-    });
+    }).lean();
 
     if (todayRecord) {
       if (todayRecord.outTime) {
@@ -73,21 +76,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new IN record for today (IST)
-    const registerNow = new Date();
-    const istRegisterTime = new Date(registerNow.getTime() + istOffset);
-    
-    // Format time in IST (HH:MM:SS AM/PM)
-    const hours = istRegisterTime.getUTCHours();
-    const minutes = istRegisterTime.getUTCMinutes();
-    const seconds = istRegisterTime.getUTCSeconds();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = hours % 12 || 12;
-    const inTime = `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')} ${ampm}`;
+    const istNow = getISTNow();
+    const inTime = formatTimeIST(new Date());
 
     await Attendance.create({
       name: user.name,
       phone: user.phone,
-      date: istRegisterTime,
+      date: istNow,
       inTime,
       outTime: null,
     });
@@ -100,10 +95,10 @@ export async function POST(request: NextRequest) {
       forgotYesterday,
     });
   } catch (error: any) {
-    console.error('Registration error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
+    console.error('Register error:', error);
+    return createErrorResponse(
+      error.message || 'Internal server error',
+      500
     );
   }
 }

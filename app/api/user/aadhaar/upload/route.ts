@@ -59,10 +59,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current IST time
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istTime = new Date(now.getTime() + istOffset);
+    // Get current IST time using utility function
+    const istTime = new Date();
 
     user.aadhaarCardImage = aadhaarImage;
     user.aadhaarUploadedAt = istTime;

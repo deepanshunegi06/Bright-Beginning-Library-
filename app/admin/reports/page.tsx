@@ -35,20 +35,25 @@ export default function AdminReports() {
     const today = new Date();
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    setEndDate(today.toISOString().split('T')[0]);
-    setStartDate(weekAgo.toISOString().split('T')[0]);
+    const todayStr = today.toISOString().split('T')[0];
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    
+    setEndDate(todayStr);
+    setStartDate(weekAgoStr);
 
-    fetchReports(weekAgo.toISOString().split('T')[0], today.toISOString().split('T')[0]);
+    fetchReports(weekAgoStr, todayStr);
+  }, [router]);
 
-    // Auto-refresh every 60 seconds if date range is selected
+  // Auto-refresh every 60 seconds
+  useEffect(() => {
+    if (!startDate || !endDate) return;
+
     const interval = setInterval(() => {
-      if (startDate && endDate) {
-        fetchReports(startDate, endDate);
-      }
+      fetchReports(startDate, endDate);
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [router, startDate, endDate]);
+  }, [startDate, endDate]);
 
   const fetchReports = async (start: string, end: string) => {
     setLoading(true);

@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import User from '@/models/User';
+import {
+  createValidationError,
+  createConflictError,
+  createErrorResponse,
+  validateRequiredFields,
+  sanitizeInput,
+} from '@/lib/api-utils';
+import { validatePhone } from '@/lib/utils';
+import { getISTNow } from '@/lib/utils';
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, HTTP_STATUS } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, joiningDate, aadhaarImage } = await request.json();
-
-    if (!name || !phone) {
-      return NextResponse.json(
-        { message: 'Name and phone are required' },
-        { status: 400 }
+    const body = await request.json();
+    
+    // Validate required fields
+    const validation = validateRequiredFields(body, ['name', 'phone']);
+    if (!validation.valid) {
+      return createValidationError(
+        `${validation.missing.join(', ')} ${validation.missing.length > 1 ? 'are' : 'is'} required`
       );
     }
 
-    // Validate phone format (10 digits)
-    if (!/^\d{10}$/.test(phone)) {
-      return NextResponse.json(
-        { message: 'Phone number must be 10 digits' },
-        { status: 400 }
-      );
+    const { name, phone, joiningDate, aadhaarImage } = sanitizeInput(body);
+
+    // Validate phone format
+    if (!validatePhone(phone)) {
+      return createValidationError(ERROR_MESSAGES.INVALID_PHONE);
     }
 
     await connectDB();
@@ -26,44 +36,37 @@ export async function POST(request: NextRequest) {
     // Check if user already exists
     const existingUser = await User.findOne({ phone });
     if (existingUser) {
-      return NextResponse.json(
-        { message: 'User with this phone number already exists' },
-        { status: 400 }
-      );
+      return createConflictError(ERROR_MESSAGES.PHONE_EXISTS);
     }
 
-    // Get IST time
-    const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset);
-
-    // Use provided joining date or default to today
-    const joining = joiningDate ? new Date(joiningDate) : istNow;
+    // Use provided joining date (no default)
+    const istNow = getISTNow();
+    const joining = joiningDate ? new Date(joiningDate) : null;
 
     // Validate Aadhaar image if provided
-    if (aadhaarImage) {
-      if (!aadhaarImage.startsWith('data:image/')) {
-        return NextResponse.json(
-          { message: 'Invalid Aadhaar image format' },
-          { status: 400 }
-        );
-      }
+    if (aadhaarImage && !aadhaarImage.startsWith('data:image/')) {
+      return createValidationError('Invalid Aadhaar image format');
     }
 
     // Create new user
-    const newUser = new User({
-      name: name.trim(),
-      phone: phone.trim(),
-      joiningDate: joining,
+    const userData: any = {
+      name,
+      phone,
       aadhaarCardImage: aadhaarImage || null,
       aadhaarUploadedAt: aadhaarImage ? istNow : null,
-    });
+    };
+    
+    if (joining) {
+      userData.joiningDate = joining;
+    }
+
+    const newUser = new User(userData);
 
     await newUser.save();
 
     return NextResponse.json(
       {
-        message: 'User added successfully',
+        message: SUCCESS_MESSAGES.USER_ADDED,
         user: {
           _id: newUser._id.toString(),
           name: newUser.name,
@@ -71,13 +74,13 @@ export async function POST(request: NextRequest) {
           joiningDate: newUser.joiningDate,
         },
       },
-      { status: 201 }
+      { status: HTTP_STATUS.CREATED }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Add user error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
+    return createErrorResponse(
+      error.message || 'Internal server error',
+      500
     );
   }
 }
